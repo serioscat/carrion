@@ -1,0 +1,11 @@
+[package]
+name = "carrion-config"
+version = "0.1.0"
+edition = "2024"
+authors = ["serioscat"]
+description = "Config manager for carrion-overlay"
+license = "MIT"
+repository = "https://github.com/serioscat/carrion"
+homepage = "https://github.com/serioscat/carrion"
+
+[dependencies]
