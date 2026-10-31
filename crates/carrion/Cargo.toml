@@ -1,0 +1,11 @@
+[package]
+name = "carrion"
+version = "0.1.0"
+edition = "2024"
+authors = ["serioscat"]
+description = "Super customizable overlay"
+license = "MIT"
+repository = "https://github.com/serioscat/carrion"
+homepage = "https://github.com/serioscat/carrion"
+
+[dependencies]
