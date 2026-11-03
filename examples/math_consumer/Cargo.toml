@@ -1,0 +1,19 @@
+[package]
+name = "math_consumer"
+version = "0.1.0"
+edition = "2024"
+authors = ["serioscat"]
+description = "Carrion plugin example!"
+license = "MIT"
+repository = "https://github.com/serioscat/carrion"
+homepage = "https://github.com/serioscat/carrion"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+carrion-api.workspace = true
+abi_stable.workspace = true
+
+math_provider-api = { path = "../math_provider-api" }
