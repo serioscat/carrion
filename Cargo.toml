@@ -1,8 +1,12 @@
 [workspace]
 resolver = "2"
-members = ["crates/*"]
+members = ["crates/*", "examples/*"]
+
+[workspace.dependencies]
+carrion-api = { version = "0.1.0", path = "crates/carrion-api" }
+abi_stable = "0.11.3"
+serde = { version = "1.0.229", features = ["derive"] }
+
 
 [profile.dev]
 split-debuginfo = "unpacked"
-
-[workspace.dependencies]
