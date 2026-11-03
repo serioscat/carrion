@@ -1,34 +1,39 @@
-use abi_stable::{export_root_module, prefix_type::PrefixTypeTrait, sabi_extern_fn, std_types::{RSlice, RStr}};
-use carrion_api::{Action, Plugin, PluginInfo, PluginRef, event::Event};
+use abi_stable::{
+    export_root_module, prefix_type::PrefixTypeTrait, sabi_extern_fn, std_types::{RStr, RVec}
+};
+use carrion_api::{
+    HostApi, Plugin, PluginInfo, PluginRef, Service, event::{
+        Action, Event
+    }
+};
 
 #[export_root_module]
 fn instantiate() -> PluginRef {
     Plugin {
         info: PluginInfo {
-            id: RStr::from_str("hello_world"),
-            description: RStr::from_str("Print 'Hello, World!' before loading"),
-            author: RStr::from_str("serioscat"),
-            version: RStr::from_str("0.1.0"),
-            api_version: 1,
-            priority: 0
+            id: RStr::from_str(env!("CARGO_PKG_NAME")),
+            description: RStr::from_str(env!("CARGO_PKG_DESCRIPTION")),
+            author: RStr::from_str(env!("CARGO_PKG_AUTHORS")),
+            version: RStr::from_str(env!("CARGO_PKG_VERSION")),
+            api_version: 1
         },
+        init,
         on_event,
-        dependencies: RSlice::empty()
+        services,
+        priority: 0
     }
     .leak_into_prefix()
 }
 
 #[sabi_extern_fn]
-fn on_event(event: &Event) -> Action {
-    match event {
-        Event::PluginEnter => {
-            println!("Hello, World!");
-            Action::Handled
-        }
-        Event::PluginLeave => {
-            println!("Bye!");
-            Action::Handled
-        }
-        _ => Action::Handled
-    }
+fn services() -> RVec<Service> {
+    RVec::new()
+}
+
+#[sabi_extern_fn]
+fn init(_host_api: HostApi) { }
+
+#[sabi_extern_fn]
+fn on_event(_event: &Event) -> Action {
+    Action::Handled
 }
