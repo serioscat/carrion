@@ -40,17 +40,23 @@ pub enum MouseButton {
 
 #[repr(u8)]
 #[derive(StableAbi, Clone, Copy, Debug, Serialize, Deserialize)]
-pub enum InputEvent {
+pub enum Event {
     Key(KeyEvent),
     Char(u32),
     MouseMove { x: f32, y: f32 },
     MouseButton { button: MouseButton, pressed: bool }
 }
 
+
 #[repr(u8)]
-#[derive(StableAbi, Clone, Copy, Debug, Serialize, Deserialize)]
-pub enum Event {
-    Input(InputEvent),
-    PluginEnter,
-    PluginLeave
+#[derive(StableAbi, Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Action {
+    /// Handle the action at the end (don't call it)
+    Handled,
+    /// Inputs or outputs have been overridden with new values
+    Continue,
+    /// Continue with the original action
+    Changed,
+    /// Immediately stop the hook chain and handle the original
+    Stop,
 }

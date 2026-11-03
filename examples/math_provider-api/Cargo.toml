@@ -1,0 +1,13 @@
+[package]
+name = "math_provider-api"
+version = "0.1.0"
+edition = "2024"
+authors = ["serioscat"]
+description = "Carrion plugin example!"
+license = "MIT"
+repository = "https://github.com/serioscat/carrion"
+homepage = "https://github.com/serioscat/carrion"
+publish = false
+
+[dependencies]
+abi_stable.workspace = true

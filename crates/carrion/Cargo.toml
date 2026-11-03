@@ -11,10 +11,14 @@ homepage = "https://github.com/serioscat/carrion"
 [dependencies]
 carrion-api.workspace = true
 abi_stable.workspace = true
+serde.workspace = true
+toml.workspace = true
+
+dirs = "7.0.0"
+anyhow = "1.0.104"
 
 # egui = "0.37.0"
 # egui-wgpu = "0.37.0"
 # egui-winit = "0.37.0"
 # global-hotkey = "0.9.0"
-# toml = "1.1.8"
 # winit = "0.30.13"
