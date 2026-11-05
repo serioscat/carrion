@@ -1,10 +1,8 @@
 use abi_stable::{
-    export_root_module, prefix_type::PrefixTypeTrait, sabi_extern_fn, std_types::{RStr, RVec}
+    export_root_module, prefix_type::PrefixTypeTrait, sabi_extern_fn, std_types::{RResult, RStr, RString}
 };
 use carrion_api::{
-    HostApi, Plugin, PluginInfo, PluginRef, Service, event::{
-        Action, Event
-    }
+    Plugin, PluginInfo, PluginRef, core_api::CorePlugin
 };
 
 #[export_root_module]
@@ -18,22 +16,14 @@ fn instantiate() -> PluginRef {
             api_version: 1
         },
         init,
-        on_event,
-        services,
-        priority: 0
+        priority: -100_000_000
     }
     .leak_into_prefix()
 }
 
 #[sabi_extern_fn]
-fn services() -> RVec<Service> {
-    RVec::new()
-}
+fn init(_core: &CorePlugin) -> RResult<(), RString> {
+    println!("Hello, World!");
 
-#[sabi_extern_fn]
-fn init(_host_api: HostApi) { }
-
-#[sabi_extern_fn]
-fn on_event(_event: &Event) -> Action {
-    Action::Handled
+    RResult::ROk(())
 }

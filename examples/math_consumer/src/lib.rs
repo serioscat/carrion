@@ -1,12 +1,10 @@
 use abi_stable::{
     export_root_module, prefix_type::PrefixTypeTrait, sabi_extern_fn, std_types::{
-        RResult::{RErr, ROk}, RStr, RVec
-    }
+        RResult, RStr, RString
+    },
 };
 use carrion_api::{
-    HostApi, Plugin, PluginInfo, PluginRef, Service, event::{
-        Action, Event
-    }
+    GuiEvent::Visibility, Plugin, PluginInfo, PluginRef, core_api::CorePlugin, event::Event,
 };
 use math_provider_api::*;
 
@@ -27,43 +25,31 @@ fn instantiate() -> PluginRef {
             description: RStr::from_str(env!("CARGO_PKG_DESCRIPTION")),
             author: RStr::from_str(env!("CARGO_PKG_AUTHORS")),
             version: RStr::from_str(env!("CARGO_PKG_VERSION")),
-            api_version: 1
+            api_version: 1,
         },
         init,
-        on_event,
-        services,
-        // not a dependency
-        priority: 0
+        priority: -100_000_000
     }
     .leak_into_prefix()
 }
 
 #[sabi_extern_fn]
-fn services() -> RVec<Service> {
-    RVec::new()
-}
-
-#[sabi_extern_fn]
-fn init(host_api: HostApi) {
-    let service = match (host_api.find_service)("math_provider".into(), "math_module".into()) {
-        ROk(svr) => unsafe { &*svr },
-        RErr(e) => {
-            eprintln!("{e}");
-            return;
-        }
-    };
-    let math = match unsafe { service.get::<Math>("math_module".into()) } {
-        Some(m) => m,
-        _ => {
-            eprintln!("Service is none");
-            return;
-        }
+fn init(core: &CorePlugin) -> RResult<(), RString> {
+    let math_plugin = match core.import::<Math>(PLUGIN_MATH_ID) {
+        Ok(p) => p,
+        Err(e) => return RResult::RErr(RString::from(e))
     };
 
-    println!("55+44 = {}", math.add(55, 44));
-}
+    let result = math_plugin.add(5, 10);
+    println!("5 + 10 = {result}");
 
-#[sabi_extern_fn]
-fn on_event(_event: &Event) -> Action {
-    Action::Handled
+    core.on_event(|event| {
+        match event {
+            Event::Gui(Visibility(true)) => println!("Hello, Carrion!"),
+            Event::Gui(Visibility(false)) => println!("Bye, Carrion."),
+            _ => {}
+        }
+    });
+
+    RResult::ROk(())
 }

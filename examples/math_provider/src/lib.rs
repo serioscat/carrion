@@ -1,13 +1,15 @@
 use abi_stable::{
-    export_root_module, prefix_type::PrefixTypeTrait, sabi_extern_fn, sabi_trait::TD_Opaque, std_types::{RStr, RVec}
+    export_root_module,
+    prefix_type::PrefixTypeTrait,
+    sabi_extern_fn,
+    sabi_trait::TD_Opaque,
+    std_types::{RResult, RStr, RString}
 };
 use carrion_api::{
-    HostApi, Plugin, PluginInfo, PluginRef, Service, event::{
-        Action, Event
-    }
+    Service, Plugin, PluginInfo, PluginRef, core_api::CorePlugin
 };
-use math_provider_api::*;
 
+use math_provider_api::*;
 
 struct MathImpl;
 
@@ -28,23 +30,15 @@ fn instantiate() -> PluginRef {
             api_version: 1
         },
         init,
-        on_event,
-        services,
-        priority: 5333
+        priority: 54_851_253
     }
     .leak_into_prefix()
 }
 
 #[sabi_extern_fn]
-fn services() -> RVec<Service> {
+fn init(core: &CorePlugin) -> RResult<(), RString> {
     let math: Math = MathApi_TO::from_value(MathImpl, TD_Opaque);
-    vec![Service::new("math_module", math)].into()
-}
+    core.add_service(Service::new(PLUGIN_MATH_ID, math));
 
-#[sabi_extern_fn]
-fn init(_host_api: HostApi) { }
-
-#[sabi_extern_fn]
-fn on_event(_event: &Event) -> Action {
-    Action::Handled
+    RResult::ROk(())
 }
