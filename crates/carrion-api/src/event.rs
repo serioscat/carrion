@@ -1,32 +1,224 @@
-use abi_stable::{
-    StableAbi
-};
+use abi_stable::StableAbi;
 use serde::{Serialize, Deserialize};
 
-pub const MOD_SHIFT: u8 = 1;
-pub const MOD_CTRL: u8 = 2;
-pub const MOD_ALT: u8 = 4;
-pub const MOD_SUPER: u8 = 8;
-
-#[repr(u16)]
+#[repr(u8)]
 #[derive(StableAbi, Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub enum Key {
-    Unknown = 0,
-    A = 1, B, C, D, E, F, G, H, I, J, K, L, M,
-    N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
-    Num0 = 100, Num1, Num2, Num3, Num4, Num5, Num6, Num7, Num8, Num9,
-    Enter = 200, Escape, Backspace, Tab, Space,
-    Left, Right, Up, Down,
-    F1 = 300, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,
+pub enum KeyCode {
+    Backquote,
+    Backslash,
+    BracketLeft,
+    BracketRight,
+    Comma,
+    Digit0,
+    Digit1,
+    Digit2,
+    Digit3,
+    Digit4,
+    Digit5,
+    Digit6,
+    Digit7,
+    Digit8,
+    Digit9,
+    Equal,
+    IntlBackslash,
+    IntlRo,
+    IntlYen,
+    KeyA,
+    KeyB,
+    KeyC,
+    KeyD,
+    KeyE,
+    KeyF,
+    KeyG,
+    KeyH,
+    KeyI,
+    KeyJ,
+    KeyK,
+    KeyL,
+    KeyM,
+    KeyN,
+    KeyO,
+    KeyP,
+    KeyQ,
+    KeyR,
+    KeyS,
+    KeyT,
+    KeyU,
+    KeyV,
+    KeyW,
+    KeyX,
+    KeyY,
+    KeyZ,
+    Minus,
+    Period,
+    Quote,
+    Semicolon,
+    Slash,
+    AltLeft,
+    AltRight,
+    Backspace,
+    CapsLock,
+    ContextMenu,
+    ControlLeft,
+    ControlRight,
+    Enter,
+    SuperLeft,
+    SuperRight,
+    ShiftLeft,
+    ShiftRight,
+    Space,
+    Tab,
+    Convert,
+    KanaMode,
+    Lang1,
+    Lang2,
+    Lang3,
+    Lang4,
+    Lang5,
+    NonConvert,
+    Delete,
+    End,
+    Help,
+    Home,
+    Insert,
+    PageDown,
+    PageUp,
+    ArrowDown,
+    ArrowLeft,
+    ArrowRight,
+    ArrowUp,
+    NumLock,
+    Numpad0,
+    Numpad1,
+    Numpad2,
+    Numpad3,
+    Numpad4,
+    Numpad5,
+    Numpad6,
+    Numpad7,
+    Numpad8,
+    Numpad9,
+    NumpadAdd,
+    NumpadBackspace,
+    NumpadClear,
+    NumpadClearEntry,
+    NumpadComma,
+    NumpadDecimal,
+    NumpadDivide,
+    NumpadEnter,
+    NumpadEqual,
+    NumpadHash,
+    NumpadMemoryAdd,
+    NumpadMemoryClear,
+    NumpadMemoryRecall,
+    NumpadMemoryStore,
+    NumpadMemorySubtract,
+    NumpadMultiply,
+    NumpadParenLeft,
+    NumpadParenRight,
+    NumpadStar,
+    NumpadSubtract,
+    Escape,
+    Fn,
+    FnLock,
+    PrintScreen,
+    ScrollLock,
+    Pause,
+    BrowserBack,
+    BrowserFavorites,
+    BrowserForward,
+    BrowserHome,
+    BrowserRefresh,
+    BrowserSearch,
+    BrowserStop,
+    Eject,
+    LaunchApp1,
+    LaunchApp2,
+    LaunchMail,
+    MediaPlayPause,
+    MediaSelect,
+    MediaStop,
+    MediaTrackNext,
+    MediaTrackPrevious,
+    Power,
+    Sleep,
+    AudioVolumeDown,
+    AudioVolumeMute,
+    AudioVolumeUp,
+    WakeUp,
+    Meta,
+    Hyper,
+    Turbo,
+    Abort,
+    Resume,
+    Suspend,
+    Again,
+    Copy,
+    Cut,
+    Find,
+    Open,
+    Paste,
+    Props,
+    Select,
+    Undo,
+    Hiragana,
+    Katakana,
+    F1,
+    F2,
+    F3,
+    F4,
+    F5,
+    F6,
+    F7,
+    F8,
+    F9,
+    F10,
+    F11,
+    F12,
+    F13,
+    F14,
+    F15,
+    F16,
+    F17,
+    F18,
+    F19,
+    F20,
+    F21,
+    F22,
+    F23,
+    F24,
+    F25,
+    F26,
+    F27,
+    F28,
+    F29,
+    F30,
+    F31,
+    F32,
+    F33,
+    F34,
+    F35,
+}
+
+#[repr(u8)]
+#[derive(StableAbi, Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PhysicalKey {
+    Code(KeyCode),
+    Unidentified(u32),
+}
+
+#[repr(u8)]
+#[derive(StableAbi, Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ElementState {
+    Pressed,
+    Released,
 }
 
 #[repr(C)]
-#[derive(StableAbi, Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct KeyEvent {
-    pub key: Key,
-    pub mods: u8,
-    pub pressed: bool,
-    pub repeat: bool,
+#[derive(StableAbi, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RawKeyEvent {
+    pub physical_key: PhysicalKey,
+    pub state: ElementState,
 }
 
 #[repr(u8)]
@@ -35,28 +227,48 @@ pub enum MouseButton {
     Left,
     Right,
     Middle,
-    Other
+    Back,
+    Forward,
+    Other(u16),
+}
+
+#[repr(C)]
+#[derive(StableAbi, Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Vec2_f64 {
+    pub x: f64,
+    pub y: f64,
 }
 
 #[repr(u8)]
-#[derive(StableAbi, Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(StableAbi, Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub enum MouseScrollDelta {
+    LineDelta(f32, f32),
+    PixelDelta(Vec2_f64),
+}
+
+#[repr(u8)]
+#[derive(StableAbi, Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub enum GuiEvent {
+    Visibility(bool)
+}
+
+#[repr(u8)]
+#[derive(StableAbi, Clone, Debug, Serialize, Deserialize)]
 pub enum Event {
-    Key(KeyEvent),
-    Char(u32),
-    MouseMove { x: f32, y: f32 },
-    MouseButton { button: MouseButton, pressed: bool }
-}
-
-
-#[repr(u8)]
-#[derive(StableAbi, Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub enum Action {
-    /// Handle the action at the end (don't call it)
-    Handled,
-    /// Inputs or outputs have been overridden with new values
-    Continue,
-    /// Continue with the original action
-    Changed,
-    /// Immediately stop the hook chain and handle the original
-    Stop,
+    Key(RawKeyEvent),
+    MouseMotion {
+        delta: Vec2_f64,
+    },
+    MouseWheel {
+        delta: MouseScrollDelta,
+    },
+    Motion {
+        axis: u32,
+        value: f64,
+    },
+    Button {
+        button: u32,
+        state: ElementState,
+    },
+    Gui(GuiEvent)
 }

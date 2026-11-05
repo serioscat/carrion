@@ -8,3 +8,5 @@ pub trait MathApi: Send + Sync {
 }
 
 pub type Math = MathApi_TO<'static, RBox<()>>;
+// any value, recommended format: plugin_name::something
+pub const PLUGIN_MATH_ID: &str = "math_provider::math";

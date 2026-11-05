@@ -1,21 +1,20 @@
+#[allow(non_local_definitions)]
+pub mod core_api;
 pub mod event;
-pub mod types;
 
+use crate::core_api::CorePlugin;
+pub use crate::event::*;
 use std::ffi::c_void;
 
-pub use crate::event::*;
-pub use crate::types::*;
-
-use abi_stable::sabi_extern_fn;
-use abi_stable::std_types::RResult;
-use abi_stable::std_types::RVec;
 // im not full understand abi_stable
 use abi_stable::{
     StableAbi,
+    sabi_extern_fn, package_version_strings,
     library::RootModule,
-    package_version_strings,
     sabi_types::VersionStrings,
-    std_types::{RString, RStr}
+    std_types::{
+        RString, RStr, RResult
+    }
 };
 
 #[repr(C)]
@@ -76,14 +75,8 @@ pub struct HostApi {
 #[sabi(kind(Prefix(prefix_ref = PluginRef)))]
 #[sabi(missing_field(panic))]
 pub struct Plugin {
-    #[sabi(last_prefix_field)]
     pub info: PluginInfo,
-    #[sabi(last_prefix_field)]
-    pub init: extern "C" fn(HostApi),
-    #[sabi(last_prefix_field)]
-    pub on_event: extern "C" fn(&Event) -> Action,
-    #[sabi(last_prefix_field)]
-    pub services: extern "C" fn() -> RVec<Service>,
+    pub init: extern "C" fn(&CorePlugin) -> RResult<(), RString>,
     #[sabi(last_prefix_field)]
     pub priority: i32
 }
