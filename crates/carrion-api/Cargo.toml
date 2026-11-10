@@ -3,10 +3,13 @@ name = "carrion-api"
 version = "0.1.0"
 edition = "2024"
 authors = ["serioscat"]
-description = "API for carrion-overlay"
+description = "Plugin API wrapper for carrion-overlay"
 license = "MIT"
 repository = "https://github.com/serioscat/carrion"
 homepage = "https://github.com/serioscat/carrion"
+
+[features]
+macros = []
 
 [dependencies]
 serde.workspace = true

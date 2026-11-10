@@ -1,13 +1,14 @@
-use abi_stable::{library::lib_header_from_path, std_types::{RResult, RStr}};
+use abi_stable::{library::lib_header_from_path, std_types::RResult};
 use anyhow::Context;
-use carrion_api::{PluginRef, core_api::{CORE_ID, CorePlugin}};
+use carrion_api::{PluginRef, core_api::{CorePlugin}};
+use tracing::{debug, error};
 
 use std::{fs, path::PathBuf};
 
-use crate::PLUGINS;
+use crate::{CONFIG, PLUGINS};
 
 
-pub fn load() -> anyhow::Result<()> {
+pub fn load(core_plugin: &CorePlugin) -> anyhow::Result<()> {
     let config_dir = dirs::config_dir().context("Failed to get config dir.")?.join("carrion");
     let plugins_dir = config_dir.join("plugins");
 
@@ -20,30 +21,6 @@ pub fn load() -> anyhow::Result<()> {
         .map(|f| f.path())
         .filter(|p| p.is_file() && p.extension().is_some_and(|e| e == "so"))
         .collect();
-
-
-    let _core = crate::core_plugin::instantiate();
-
-    let core_service = unsafe {
-        &*crate::core_plugin::find_service(CORE_ID)
-        .unwrap_or_else(|e| panic!("Core service not found: {e}"))
-    };
-    let core_plugin = match unsafe { core_service.get::<CorePlugin>(CORE_ID) } {
-        Some(c) => c,
-        None => panic!("Core service type mismatch: id “{}” found, but type is not CorePlugin", CORE_ID),
-    };
-
-    let config = toml::from_str::<toml::Table>(
-        Result::from(
-            core_plugin
-                .get_config(
-                    RStr::from("carrion")
-                )
-        )
-        .map_err(String::from)
-        .unwrap()
-        .as_str()
-    )?;
 
     let mut plugins = Vec::new();
 
@@ -62,19 +39,21 @@ pub fn load() -> anyhow::Result<()> {
 
     plugins.sort_by_key(|p| std::cmp::Reverse(p.priority()));
 
+    let config = CONFIG.lock().unwrap(); 
+    
+
     for plugin in plugins {
         let info = plugin.info();
 
-        if let RResult::RErr(e) = plugin.init()(core_plugin) {
-            eprintln!("Failed to init plugin {}: {e}", info.id);
+        if let RResult::RErr(e) = plugin.init()(&core_plugin) {
+            error!("Failed to init plugin {}: {e}", info.id);
 
-            match config["exit_on_error"] {
-                toml::Value::Boolean(v) if v => anyhow::bail!("Failed to init plugin {}: {e}", info.id),
-                _ => continue
+            if config.exit_on_error {
+                anyhow::bail!("Failed to init plugin {}: {e}", info.id);
             }
         }
 
-        println!("Loaded - {} | {}", info.id, info.version);
+        debug!(name = info.id.to_string(), version = info.version.to_string(), "Plugin loaded");
         PLUGINS.lock().unwrap().push(plugin);
     }
 

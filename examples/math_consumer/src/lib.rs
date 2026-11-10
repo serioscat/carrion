@@ -3,8 +3,7 @@ use abi_stable::{
         RResult, RStr, RString
     },
 };
-use carrion_api::{
-    GuiEvent::Visibility, Plugin, PluginInfo, PluginRef, core_api::CorePlugin, event::Event,
+use carrion_api::{Plugin, PluginInfo, PluginRef, core_api::CorePlugin, event::Event,
 };
 use math_provider_api::*;
 
@@ -24,8 +23,7 @@ fn instantiate() -> PluginRef {
             id: RStr::from_str(env!("CARGO_PKG_NAME")),
             description: RStr::from_str(env!("CARGO_PKG_DESCRIPTION")),
             author: RStr::from_str(env!("CARGO_PKG_AUTHORS")),
-            version: RStr::from_str(env!("CARGO_PKG_VERSION")),
-            api_version: 1,
+            version: RStr::from_str(env!("CARGO_PKG_VERSION"))
         },
         init,
         priority: -100_000_000
@@ -40,13 +38,13 @@ fn init(core: &CorePlugin) -> RResult<(), RString> {
         Err(e) => return RResult::RErr(RString::from(e))
     };
 
-    let result = math_plugin.add(5, 10);
-    println!("5 + 10 = {result}");
+    let result = math_plugin.add(10, 5);
+    assert_eq!(10 + 5, result);
 
-    core.on_event(|event| {
+    core.on_event(|plugin, event| {
         match event {
-            Event::Gui(Visibility(true)) => println!("Hello, Carrion!"),
-            Event::Gui(Visibility(false)) => println!("Bye, Carrion."),
+            Event::Visible(true) => carrion_api::info!(plugin, "Hello, Carrion!"),
+            Event::Visible(false) => carrion_api::info!(plugin, "Bye, Carrion."),
             _ => {}
         }
     });

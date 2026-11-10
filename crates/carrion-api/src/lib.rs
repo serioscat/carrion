@@ -1,12 +1,13 @@
 #[allow(non_local_definitions)]
 pub mod core_api;
 pub mod event;
+pub mod types;
+#[cfg(feature = "macros")]
+pub mod macros;
 
 use crate::core_api::CorePlugin;
-pub use crate::event::*;
 use std::ffi::c_void;
 
-// im not full understand abi_stable
 use abi_stable::{
     StableAbi,
     sabi_extern_fn, package_version_strings,
@@ -16,6 +17,17 @@ use abi_stable::{
         RString, RStr, RResult
     }
 };
+
+
+
+#[repr(u8)]
+#[derive(StableAbi, Clone, Copy, Debug)]
+pub enum LogLevel {
+    Debug,
+    Info,
+    Warn,
+    Error,
+}
 
 #[repr(C)]
 #[derive(StableAbi, Debug)]
@@ -59,8 +71,7 @@ pub struct PluginInfo {
     pub id: RStr<'static>,
     pub description: RStr<'static>,
     pub author: RStr<'static>,
-    pub version: RStr<'static>,
-    pub api_version: u32
+    pub version: RStr<'static>
 }
 
 #[repr(C)]

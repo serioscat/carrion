@@ -13,7 +13,7 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-carrion-api.workspace = true
+carrion-api = { workspace = true, features = ["macros"] }
 abi_stable.workspace = true
 
 math_provider-api = { path = "../math_provider-api" }

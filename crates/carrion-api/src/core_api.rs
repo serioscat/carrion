@@ -6,12 +6,12 @@ use abi_stable::{
     }
 };
 
-use crate::{Event, Service};
+use crate::{event::Event, Service, LogLevel};
 
 #[sabi_trait]
 pub trait EventHandler: Send + Sync {
     #[doc(hidden)]
-    fn call(&self, e: Event);
+    fn call(&self, c: &CorePlugin, e: Event);
 }
 
 pub type Handler = EventHandler_TO<'static, RBox<()>>;
@@ -20,10 +20,10 @@ struct FnHandler<F>(F);
 
 impl<F> EventHandler for FnHandler<F>
 where 
-    F: Fn(Event) + Send + Sync + 'static
+    F: Fn(&CorePlugin, Event) + Send + Sync + 'static
 {
-    fn call(&self, e: Event) {
-        (self.0)(e)
+    fn call(&self, c: &CorePlugin, e: Event) {
+        (self.0)(c, e)
     }
 }
 
@@ -36,17 +36,20 @@ pub trait CorePluginApi: Send + Sync {
     fn remove_service(&self, service_id: RStr) -> RResult<(), RString>;
 
     #[doc(hidden)]
-    fn find_service(&self, id: RStr) -> RResult<*const Service, RString>;
+    fn _log(&self, level: LogLevel, target: RStr, message: RStr);
 
     #[doc(hidden)]
-    fn add_event_handler(&self, h: Handler);
+    fn _find_service(&self, id: RStr) -> RResult<*const Service, RString>;
+
+    #[doc(hidden)]
+    fn _add_event_handler(&self, h: Handler);
 }
 
 pub type CorePlugin = CorePluginApi_TO<'static, RBox<()>>;
 
 impl CorePlugin {
     pub fn import<T>(&self, id: &str) -> Result<&T, String> {
-        let service = match self.find_service(id.into()) {
+        let service = match self._find_service(id.into()) {
             RResult::ROk(p) => unsafe { &*p },
             RResult::RErr(e) => return Err(e.to_string()),
         };
@@ -57,9 +60,9 @@ impl CorePlugin {
 
     pub fn on_event<F>(&self, f: F)
     where
-        F: Fn(Event) + Send + Sync + 'static,
+        F: Fn(&CorePlugin, Event) + Send + Sync + 'static,
     {
-        self.add_event_handler(EventHandler_TO::from_value(FnHandler(f), TD_Opaque));
+        self._add_event_handler(EventHandler_TO::from_value(FnHandler(f), TD_Opaque));
     }
 }
 

@@ -9,16 +9,26 @@ repository = "https://github.com/serioscat/carrion"
 homepage = "https://github.com/serioscat/carrion"
 
 [dependencies]
-carrion-api.workspace = true
+carrion-api = { workspace = true, features = ["macros"] }
 abi_stable.workspace = true
 serde.workspace = true
 toml.workspace = true
 
 dirs = "7.0.0"
 anyhow = "1.0.104"
+once_cell = "1.21.4"
 
-# egui = "0.37.0"
-# egui-wgpu = "0.37.0"
-# egui-winit = "0.37.0"
-# global-hotkey = "0.9.0"
-# winit = "0.30.13"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "local-time"] }
+tracing = "0.1.44"
+time = { version = "0.3.55", features = ["macros"] }
+
+winit = "0.30.13"
+egui = "0.37.0"
+egui-winit = "0.37.0"
+egui-wgpu = { version = "0.37.0", features = ["winit"] }
+pollster = "1.0.1"
+
+global-hotkey = "0.9.0"
+raw-window-handle = "0.6.2"
+x11-dl = "2.21.0"
+
