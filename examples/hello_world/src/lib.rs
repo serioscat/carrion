@@ -12,8 +12,7 @@ fn instantiate() -> PluginRef {
             id: RStr::from_str(env!("CARGO_PKG_NAME")),
             description: RStr::from_str(env!("CARGO_PKG_DESCRIPTION")),
             author: RStr::from_str(env!("CARGO_PKG_AUTHORS")),
-            version: RStr::from_str(env!("CARGO_PKG_VERSION")),
-            api_version: 1
+            version: RStr::from_str(env!("CARGO_PKG_VERSION"))
         },
         init,
         priority: -100_000_000
@@ -22,8 +21,8 @@ fn instantiate() -> PluginRef {
 }
 
 #[sabi_extern_fn]
-fn init(_core: &CorePlugin) -> RResult<(), RString> {
-    println!("Hello, World!");
+fn init(core: &CorePlugin) -> RResult<(), RString> {
+    carrion_api::info!(core, "Hello, World!");
 
     RResult::ROk(())
 }

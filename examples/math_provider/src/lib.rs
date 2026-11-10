@@ -26,8 +26,7 @@ fn instantiate() -> PluginRef {
             id: RStr::from_str(env!("CARGO_PKG_NAME")),
             description: RStr::from_str(env!("CARGO_PKG_DESCRIPTION")),
             author: RStr::from_str(env!("CARGO_PKG_AUTHORS")),
-            version: RStr::from_str(env!("CARGO_PKG_VERSION")),
-            api_version: 1
+            version: RStr::from_str(env!("CARGO_PKG_VERSION"))
         },
         init,
         priority: 54_851_253

@@ -1,32 +1,22 @@
-// The first one is always loaded
-
-use std::{collections::HashMap, str::FromStr};
-
 use abi_stable::{
-    sabi_extern_fn,
-    prefix_type::PrefixTypeTrait,
-    sabi_trait::TD_Opaque,
     std_types::{
-        RResult::{self, RErr, ROk},
-        RStr, RString
+        RResult::{self, RErr, ROk}, RStr, RString
     }
 };
 use carrion_api::{
-    Plugin, PluginInfo, PluginRef, Service,
-    core_api::{
-        CorePluginApi_TO, CorePlugin, CorePluginApi,
-        CORE_ID, Handler
+    Service, LogLevel, core_api::{
+        CorePluginApi, CORE_ID, Handler
     }
 };
 
-use crate::{HANDLERS, SERVICES};
+use crate::{HANDLERS, SERVICES, config::Config};
 
 #[macro_export]
 macro_rules! rresult_try {
     ($e:expr) => {
         match $e {
             Ok(v) => v,
-            Err(e) => return abi_stable::std_types::RErr(format!("{e:#}").into()),
+            Err(e) => return RErr(format!("{e:#}").into()),
         }
     };
 }
@@ -39,14 +29,7 @@ pub fn find_service(service_id: &str) -> Result<*const Service, String> {
     Ok(result? as *const Service)
 }
 
-type Root = HashMap<String, toml::Table>;
-const CARRION_CONFIG: &str = r#"
-[carrion]
-debug = false
-toggle_overlay_bind = "Super+G"
-exit_on_error = true
-"#;
-struct CorePluginImpl;
+pub struct CorePluginImpl;
 
 impl CorePluginApi for CorePluginImpl {
     fn get_config(&self, id: RStr) -> RResult<RString, RString> {
@@ -58,22 +41,40 @@ impl CorePluginApi for CorePluginImpl {
         let dir = rresult_try!(dirs::config_dir().ok_or("Failed get config dir")).join("carrion");
         let path = dir.join("carrion.toml");
 
-        if !path.exists() {
-            rresult_try!(std::fs::create_dir_all(&dir));
-            let mut root = Root::new();
+        let text = if path.exists() {
+            rresult_try!(std::fs::read_to_string(&path))
+        } else {
+            String::new()
+        };
 
-            let content = rresult_try!(toml::Table::from_str(CARRION_CONFIG));
-            root.insert("carrion".into(), content);
-            rresult_try!(std::fs::write(&path, rresult_try!(toml::to_string_pretty(&root))));
-        }
+        let mut root: toml::Table = if text.trim().is_empty() {
+            toml::Table::new()
+        } else {
+            rresult_try!(toml::from_str(&text))
+        };
 
-        let text = rresult_try!(std::fs::read_to_string(&path));
-        let root: Root = rresult_try!(toml::from_str(&text));
-        let raw = rresult_try!(root.get(id).ok_or(format!("No config section for {id}")));
-        let result = rresult_try!(toml::to_string(raw));
+        let raw = match root.get(id) {
+            Some(v) => v.clone(),
+            None if id == "carrion" => {
+                let defaults = toml::Value::Table(
+                    rresult_try!(toml::Table::try_from(&Config::default()))
+                );
 
+                if root.is_empty() {
+                    root.insert(id.to_string(), defaults.clone());
+                    rresult_try!(std::fs::create_dir_all(&dir));
+                    rresult_try!(std::fs::write(&path, rresult_try!(toml::to_string_pretty(&root))));
+                }
+
+                defaults
+            }
+            None => return RErr(RString::from(format!("No config section for {id}")))
+        };
+
+        let result = rresult_try!(toml::to_string(&raw));
         ROk(RString::from(result))
     }
+
 
     fn add_service(&self, service: Service) -> RResult<(), RString> {
         let id = service.id.to_string();
@@ -107,37 +108,27 @@ impl CorePluginApi for CorePluginImpl {
         ROk(())
     }
 
-    fn find_service(&self, service: RStr) -> RResult<*const Service, RString> {
+    fn _log(&self, level: LogLevel, target: RStr<'_>, message: RStr<'_>) {
+        let (t, m) = (target.as_str(), message.as_str());
+
+        // im mb replace this
+        let message = format!("\x1b[1D\x1b[2m{t}:\x1b[0m {m}");
+
+        match level {
+            LogLevel::Debug => tracing::debug!(target: "plugin:", "{message}"),
+            LogLevel::Info  => tracing::info!( target: "plugin:", "{message}"),
+            LogLevel::Warn  => tracing::warn!( target: "plugin:", "{message}"),
+            LogLevel::Error => tracing::error!(target: "plugin:", "{message}"),
+        }
+    }
+
+    fn _find_service(&self, service: RStr) -> RResult<*const Service, RString> {
         find_service(&service).map_err(RString::from).into()
     }
 
-    fn add_event_handler(&self, handler: Handler) {
+    fn _add_event_handler(&self, handler: Handler) {
         if let Ok(mut h) = HANDLERS.lock() {
             h.push(handler);
         }
     }
-}
-
-pub fn instantiate() -> PluginRef {
-    let core_plugin: CorePlugin = CorePluginApi_TO::from_value(CorePluginImpl, TD_Opaque);
-    SERVICES.lock().unwrap().insert(CORE_ID.to_string(), Service::new(CORE_ID, core_plugin));
-
-
-    Plugin {
-        info: PluginInfo {
-            id: RStr::from_str(env!("CARGO_PKG_NAME")),
-            description: RStr::from_str(env!("CARGO_PKG_DESCRIPTION")),
-            author: RStr::from_str(env!("CARGO_PKG_AUTHORS")),
-            version: RStr::from_str(env!("CARGO_PKG_VERSION")),
-            api_version: 1
-        },
-        init,
-        priority: 0
-    }
-    .leak_into_prefix()
-}
-
-#[sabi_extern_fn]
-fn init(_core: &CorePlugin) -> RResult<(), RString> {
-    RResult::ROk(())
 }
