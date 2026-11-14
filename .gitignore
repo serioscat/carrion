@@ -3,6 +3,7 @@
 debug
 target
 .env
+Cargo.lock
 
 push.sh
 

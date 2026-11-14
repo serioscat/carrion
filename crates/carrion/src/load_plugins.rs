@@ -1,16 +1,18 @@
-use abi_stable::{library::lib_header_from_path, std_types::RResult};
+use abi_stable::{library::lib_header_from_path, sabi_trait::TD_Opaque, std_types::{RArc, RResult}};
 use anyhow::Context;
-use carrion_api::{PluginRef, core_api::{CorePlugin}};
-use tracing::{debug, error};
+use carrion_api::{PluginRef, core::*};
+use tracing::error;
 
 use std::{fs, path::PathBuf};
 
-use crate::{CONFIG, PLUGINS};
+use crate::{CONFIG, PLUGINS, core::{event::EventHandlerApiImpl, feature::FeatureApiImpl, logger::LoggerApiImpl}};
 
 
-pub fn load(core_plugin: &CorePlugin) -> anyhow::Result<()> {
+pub fn load() -> anyhow::Result<()> {
     let config_dir = dirs::config_dir().context("Failed to get config dir.")?.join("carrion");
     let plugins_dir = config_dir.join("plugins");
+
+    let config = CONFIG.lock().unwrap(); 
 
     if !plugins_dir.exists() {
         fs::create_dir_all(&plugins_dir)?;
@@ -26,12 +28,19 @@ pub fn load(core_plugin: &CorePlugin) -> anyhow::Result<()> {
 
     for plugin_path in plugins_path {
         let header = lib_header_from_path(&plugin_path).context(format!("Plugin load failed: {}", plugin_path.to_string_lossy()))?;
-        let plugin = header.init_root_module::<PluginRef>()?;
+        let plugin = match header.init_root_module::<PluginRef>() {
+            Ok(p) => p,
+            Err(e) => {
+                error!(path = %plugin_path.display(), error = %e, "Failed to load plugin");
+                continue;
+            }
+        };
 
         let info = plugin.info();
 
         if PLUGINS.lock().unwrap().iter().any(|p| p.info().id == info.id) {
-            anyhow::bail!("The {} plugin is already registered.", info.id);
+            tracing::warn!(plugin_id = %info.id, path = %plugin_path.display(), "Plugin is already registered");
+            continue;
         }
 
         plugins.push(plugin);
@@ -39,21 +48,27 @@ pub fn load(core_plugin: &CorePlugin) -> anyhow::Result<()> {
 
     plugins.sort_by_key(|p| std::cmp::Reverse(p.priority()));
 
-    let config = CONFIG.lock().unwrap(); 
-    
+    let f: feature::FeatureApiObj = feature::FeatureApi_TO::from_value(FeatureApiImpl, TD_Opaque);
+    let l: logger::LoggerApiObj = logger::LoggerApi_TO::from_value(LoggerApiImpl, TD_Opaque);
+    let e: event::EventHandlerApiObj = event::EventHandlerApi_TO::from_value(EventHandlerApiImpl, TD_Opaque);
+    // let w: window::WindowApiObj = window::WindowApi_TO::from_value(WindowApiImpl, TD_Opaque);
+
+    f.add_feature(logger::PLUGIN_ID.into(), logger::FEATURE_ID.into(), RArc::new(feature::Feature::new(l)));
+    f.add_feature(event::PLUGIN_ID.into(), event::FEATURE_ID.into(), RArc::new(feature::Feature::new(e)));
+    // f.add_feature(window::PLUGIN_ID.into(), window::FEATURE_ID.into(), RArc::new(feature::Feature::new(w)));
 
     for plugin in plugins {
         let info = plugin.info();
 
-        if let RResult::RErr(e) = plugin.init()(&core_plugin) {
-            error!("Failed to init plugin {}: {e}", info.id);
+        if let RResult::RErr(e) = plugin.init()(&f) {
+            error!(plugin_id = %info.id, error = %e, "Failed to init plugin");
 
             if config.exit_on_error {
                 anyhow::bail!("Failed to init plugin {}: {e}", info.id);
             }
         }
 
-        debug!(name = info.id.to_string(), version = info.version.to_string(), "Plugin loaded");
+        tracing::debug!(id = %info.id, version = %info.version, "Loaded");
         PLUGINS.lock().unwrap().push(plugin);
     }
 

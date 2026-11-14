@@ -44,7 +44,7 @@ impl ApplicationHandler for Overlay {
         let attrs = WindowAttributes::default()
             .with_inner_size(size)
             .with_position(pos)
-            .with_blur(true)
+            .with_transparent(true)
             .with_override_redirect(true)
             .with_name("carrion", "carrion")
             .with_title("Carrion Overlay");
@@ -136,18 +136,26 @@ impl ApplicationHandler for Overlay {
 
                 let raw = state.take_egui_input(window);
                 let mut out = self.egui_ctx.run_ui(raw, |ctx| {
-                    let p = ctx.layer_painter(egui::LayerId::new(egui::Order::Background, egui::Id::unique("overlay")));
-                    p.text(
-                        egui::pos2(20., 20.),
-                        egui::Align2::LEFT_TOP,
-                        "Hello, Carrion!",
-                        egui::FontId::proportional(14.),
-                        egui::Color32::WHITE
+                    ctx.layer_painter(egui::LayerId::background()).rect_filled(
+                        ctx.content_rect(),
+                        0.,
+                        egui::Color32::from_black_alpha(140),
                     );
 
-                    if ctx.button("Close win").clicked() {
+                    if ctx.button("Exit from overlay").clicked() {
                         event_loop.exit();
                     }
+
+
+                    egui::Window::new("Window")
+                        .resizable(true)
+                        .collapsible(false)
+                        .default_pos([100., 100.])
+                        .default_size([100., 100.])
+                        .show(&ctx, |ui| {
+                            ui.label("text here");
+                            ui.allocate_space(ui.available_size());
+                        });
                 });
 
                 state.handle_platform_output(window, out.platform_output);

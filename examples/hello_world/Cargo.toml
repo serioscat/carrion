@@ -13,5 +13,5 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-carrion-api = { workspace = true, features = ["macros"] }
+carrion-api.workspace = true
 abi_stable.workspace = true

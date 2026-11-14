@@ -1,69 +1,69 @@
 mod config;
 mod overlay;
-mod core_plugin;
+mod core;
 mod load_plugins;
 
 use std::{collections::HashMap, sync::{LazyLock, Mutex}};
 
-use abi_stable::{sabi_trait::TD_Opaque, std_types::RStr};
+use abi_stable::std_types::RArc;
+use clap::Parser;
 use global_hotkey::{GlobalHotKeyEvent, GlobalHotKeyManager, HotKeyState, hotkey::{Code, HotKey, Modifiers}};
 
-use tracing::info;
 use time::macros::format_description;
 use tracing_subscriber::{EnvFilter, fmt::time::LocalTime};
 
 use winit::{event_loop::{ControlFlow, EventLoop}};
-use carrion_api::{event::Event, PluginRef, Service, core_api::{CorePlugin, CorePluginApi_TO, Handler}};
+use carrion_api::{
+    PluginRef, core::{event::EventHandlerApiObj, feature::Feature}, event::Event
+};
 
 use crate::{
     config::Config,
-    core_plugin::CorePluginImpl,
     overlay::state::OverlayState
 };
 
 
-static SERVICES: LazyLock<Mutex<HashMap<String, Service>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
-static HANDLERS: LazyLock<Mutex<Vec<Handler>>> = LazyLock::new(|| Mutex::new(Vec::new()));
+static FEATURES: LazyLock<Mutex<HashMap<String, HashMap<String, RArc<Feature>>>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
+static HANDLERS: LazyLock<Mutex<Vec<EventHandlerApiObj>>> = LazyLock::new(|| Mutex::new(Vec::new()));
 static PLUGINS: LazyLock<Mutex<Vec<PluginRef>>> = LazyLock::new(|| Mutex::new(Vec::new()));
-static CONFIG: LazyLock<Mutex<Config>> = LazyLock::new(|| Mutex::new(Config::default()));
-static OVERLAY_STATE: LazyLock<Mutex<OverlayState>> = LazyLock::new(|| Mutex::new(OverlayState::default()));
+static CONFIG: LazyLock<Mutex<Config>> = LazyLock::new(|| {
+    let config = Config::get();
 
+    if let Ok(c) = config {
+        Mutex::new(c)
+    } else {
+        tracing::error!("Error: {:?}", config);
+        Mutex::new(Config::default())
+    }
+});
+static OVERLAY_STATE: LazyLock<Mutex<OverlayState>> = LazyLock::new(|| Mutex::new(OverlayState::default()));
 
 pub fn send_event(event: Event) {
     tracing::debug!("Sending event: {event:?}");
 
-    let core_plugin: CorePlugin = CorePluginApi_TO::from_value(CorePluginImpl, TD_Opaque);
     let handlers = HANDLERS.lock().unwrap();
 
     for handler in handlers.iter() {
-        handler.call(&core_plugin, event.clone());
+        handler._call(event.clone());
     }
 }
 
+#[derive(clap::Parser, Debug)]
+struct Args {
+    #[arg(long)]
+    debug: bool,
+}
+
 fn main() -> anyhow::Result<()> {
-    let timer = LocalTime::new(format_description!(
-        "[year]-[month]-[day]T[hour repr:24]:[minute]:[second].[subsecond digits:2]Z"
-    ));
+    let args = Args::parse();
 
-
-    let core_plugin: CorePlugin = CorePluginApi_TO::from_value(CorePluginImpl, TD_Opaque);
-    let mut config = CONFIG.lock().unwrap();
-    *config = toml::from_str::<config::Config>(
-        core_plugin
-            .get_config(
-                RStr::from("carrion")
-            )
-        .into_result()
-        .map_err(String::from)
-        .unwrap()
-        .as_str()
-    )?;
-
-    let debug = if config.debug {
+    let debug = if !args.debug {
         "debug"
     } else { "info" };
 
-    drop(config);
+    let timer = LocalTime::new(format_description!(
+        "[year]-[month]-[day]T[hour repr:24]:[minute]:[second].[subsecond digits:2]Z"
+    ));
 
     let env_filter = EnvFilter::new(format!(
         "carrion={debug},plugin={debug}"
@@ -77,9 +77,9 @@ fn main() -> anyhow::Result<()> {
         .init();
 
     // plugins injecting
-    load_plugins::load(&core_plugin)?;
+    load_plugins::load()?;
 
-    info!("Plugins loaded");
+    tracing::info!("Plugins loaded");
 
     // building window
     let event_loop = EventLoop::<()>::with_user_event().build()?;

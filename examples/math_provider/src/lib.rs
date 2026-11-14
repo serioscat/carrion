@@ -1,12 +1,8 @@
 use abi_stable::{
-    export_root_module,
-    prefix_type::PrefixTypeTrait,
-    sabi_extern_fn,
-    sabi_trait::TD_Opaque,
-    std_types::{RResult, RStr, RString}
+    export_root_module, prefix_type::PrefixTypeTrait, sabi_extern_fn, sabi_trait::TD_Opaque, std_types::{RArc, RResult, RStr, RString}
 };
 use carrion_api::{
-    Service, Plugin, PluginInfo, PluginRef, core_api::CorePlugin
+    Plugin, PluginInfo, PluginRef, core::feature::{Feature, FeatureApiObj}
 };
 
 use math_provider_api::*;
@@ -35,9 +31,7 @@ fn instantiate() -> PluginRef {
 }
 
 #[sabi_extern_fn]
-fn init(core: &CorePlugin) -> RResult<(), RString> {
+fn init(f: &FeatureApiObj) -> RResult<(), RString> {
     let math: Math = MathApi_TO::from_value(MathImpl, TD_Opaque);
-    core.add_service(Service::new(PLUGIN_MATH_ID, math));
-
-    RResult::ROk(())
+    f.add_feature(PLUGIN_ID.into(), FEATURE_ID.into(), RArc::new(Feature::new(math)))
 }

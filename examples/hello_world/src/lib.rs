@@ -2,7 +2,7 @@ use abi_stable::{
     export_root_module, prefix_type::PrefixTypeTrait, sabi_extern_fn, std_types::{RResult, RStr, RString}
 };
 use carrion_api::{
-    Plugin, PluginInfo, PluginRef, core_api::CorePlugin
+    Plugin, PluginInfo, PluginRef, core::feature::FeatureApiObj
 };
 
 #[export_root_module]
@@ -21,8 +21,14 @@ fn instantiate() -> PluginRef {
 }
 
 #[sabi_extern_fn]
-fn init(core: &CorePlugin) -> RResult<(), RString> {
-    carrion_api::info!(core, "Hello, World!");
+fn init(f: &FeatureApiObj) -> RResult<(), RString> {
+    let logger = match f.import(carrion_api::core::logger::FEATURE_KEY) {
+        Ok(p) => p,
+        Err(e) => return RResult::RErr(RString::from(e))
+    };
+
+    carrion_api::core::logger::init_logger(logger);
+    carrion_api::info!("Hello, World!");
 
     RResult::ROk(())
 }

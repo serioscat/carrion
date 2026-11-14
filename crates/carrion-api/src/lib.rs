@@ -1,16 +1,11 @@
 #[allow(non_local_definitions)]
-pub mod core_api;
+pub mod core;
 pub mod event;
 pub mod types;
-#[cfg(feature = "macros")]
-pub mod macros;
 
-use crate::core_api::CorePlugin;
-use std::ffi::c_void;
 
 use abi_stable::{
-    StableAbi,
-    sabi_extern_fn, package_version_strings,
+    StableAbi, package_version_strings,
     library::RootModule,
     sabi_types::VersionStrings,
     std_types::{
@@ -18,52 +13,8 @@ use abi_stable::{
     }
 };
 
+use crate::core::feature::{Feature, FeatureApiObj};
 
-
-#[repr(u8)]
-#[derive(StableAbi, Clone, Copy, Debug)]
-pub enum LogLevel {
-    Debug,
-    Info,
-    Warn,
-    Error,
-}
-
-#[repr(C)]
-#[derive(StableAbi, Debug)]
-pub struct Service {
-    pub id: RString,
-    ptr: *mut c_void,
-    drop_fn: extern "C" fn(*mut c_void)
-}
-
-unsafe impl Send for Service {}
-unsafe impl Sync for Service {}
-
-#[sabi_extern_fn]
-fn drop_impl<T>(p: *mut c_void) {
-    unsafe { drop(Box::from_raw(p as *mut T)); }
-}
-
-impl Service {
-    pub fn new<T: Send + Sync + 'static>(id: &str, value: T) -> Self {
-        Self {
-            id: id.into(),
-            ptr: Box::into_raw(Box::new(value)) as *mut c_void,
-            drop_fn: drop_impl::<T>
-        }
-    }
-
-    pub unsafe fn get<T>(&self, id: &str) -> Option<&T> {
-        (self.id.as_str() == id).then(|| unsafe { &*(self.ptr as *const T) } )
-    }
-}
-
-impl Drop for Service {
-    fn drop(&mut self) {
-        (self.drop_fn)(self.ptr)
-    }
-}
 
 #[repr(C)]
 #[derive(StableAbi, Clone, Copy, Debug)]
@@ -77,7 +28,7 @@ pub struct PluginInfo {
 #[repr(C)]
 #[derive(StableAbi, Clone, Copy, Debug)]
 pub struct HostApi {
-    pub find_service: extern "C" fn(plugin_id: RStr<'static>, service: RStr<'static>) -> RResult<*const Service, RString>
+    pub find_feature: extern "C" fn(plugin_id: RStr<'static>, feature: RStr<'static>) -> RResult<Feature, RString>
 }
 
 
@@ -87,7 +38,7 @@ pub struct HostApi {
 #[sabi(missing_field(panic))]
 pub struct Plugin {
     pub info: PluginInfo,
-    pub init: extern "C" fn(&CorePlugin) -> RResult<(), RString>,
+    pub init: extern "C" fn(&FeatureApiObj) -> RResult<(), RString>,
     #[sabi(last_prefix_field)]
     pub priority: i32
 }
