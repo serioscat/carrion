@@ -8,11 +8,11 @@ pub use reference::*;
 
 use std::ffi::c_void;
 
-use abi_stable::{StableAbi, sabi_extern_fn};
+use abi_stable::sabi_extern_fn;
 
 
 #[repr(C)]
-#[derive(StableAbi, Debug)]
+#[derive(abi_stable::StableAbi, Debug)]
 pub struct Feature {
     ptr: *mut c_void,
     drop_fn: extern "C" fn(*mut c_void)

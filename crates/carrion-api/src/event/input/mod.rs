@@ -4,18 +4,17 @@ pub mod mouse;
 pub use mouse::*;
 pub use keyboard::*;
 
-use abi_stable::StableAbi;
-use serde::{Serialize, Deserialize};
-
 #[repr(u8)]
-#[derive(StableAbi, Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(abi_stable::StableAbi, Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum ElementState {
     Pressed,
     Released,
 }
 
 #[repr(u8)]
-#[derive(StableAbi, Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(abi_stable::StableAbi, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum InputEvent {
     Keyboard(KeyboardInputEvent),
     Mouse(MouseEvent)

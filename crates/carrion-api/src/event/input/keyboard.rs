@@ -1,11 +1,11 @@
 use abi_stable::{StableAbi, std_types::ROption};
-use serde::{Deserialize, Serialize};
 
 use crate::event::ElementState;
 
 
-#[repr(u32)]
-#[derive(StableAbi, Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[repr(u8)]
+#[derive(StableAbi, Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum VirtualKeyCode {
     Key1 = 0,
     Key2 = 1,
@@ -173,7 +173,8 @@ pub enum VirtualKeyCode {
 }
 
 #[repr(C)]
-#[derive(StableAbi, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(StableAbi, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct KeyboardInputEvent {
     pub scancode: u32,
     pub state: ElementState,
@@ -183,7 +184,8 @@ pub struct KeyboardInputEvent {
 
 
 #[repr(C)]
-#[derive(StableAbi, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(StableAbi, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ModifiersState {
     pub logo: bool,
     pub control: bool,

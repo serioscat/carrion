@@ -1,7 +1,6 @@
 use std::sync::OnceLock;
 
-use abi_stable::{StableAbi, sabi_trait, std_types::{RBox, RStr}};
-use serde::{Deserialize, Serialize};
+use abi_stable::{sabi_trait, std_types::{RBox, RStr}};
 
 use crate::core::feature::{FeatureKey, FeatureRef};
 
@@ -19,7 +18,8 @@ pub fn init_logger(l: FeatureRef<LoggerApiObj>) {
 }
 
 #[repr(u8)]
-#[derive(StableAbi, Clone, Copy, Serialize, Deserialize, Debug)]
+#[derive(abi_stable::StableAbi, Clone, Copy, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum LogLevel {
     Debug,
     Info,

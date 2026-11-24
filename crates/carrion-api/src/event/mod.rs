@@ -6,27 +6,25 @@ pub use input::*;
 pub use system::*;
 pub use window::*;
 
-use abi_stable::StableAbi;
-use serde::{Serialize, Deserialize};
-
-pub type WindowId = usize;
-
 #[repr(C)]
-#[derive(StableAbi, Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(abi_stable::StableAbi, Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct PhysicalSize {
     pub w: u32,
     pub h: u32
 }
 
 #[repr(C)]
-#[derive(StableAbi, Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(abi_stable::StableAbi, Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct PhysicalPosition {
     pub x: i32,
     pub y: i32
 }
 
 #[repr(u8)]
-#[derive(StableAbi, Clone, Debug, Serialize, Deserialize)]
+#[derive(abi_stable::StableAbi, Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Event {
     Window(WindowEvent),
     Input(InputEvent),

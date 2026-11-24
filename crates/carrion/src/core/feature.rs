@@ -1,8 +1,5 @@
-use std::{collections::HashMap, sync::MutexGuard};
-
 use abi_stable::std_types::{RArc, RResult, RStr, RString};
 use carrion_api::core::feature::{Feature, FeatureApi};
-
 
 use crate::FEATURES;
 
@@ -23,7 +20,7 @@ impl FeatureApi for FeatureApiImpl {
         let plugin = plugin.as_str();
         let feature_name = feature_name.as_str();
 
-        let mut features = rresult_try!(FEATURES.lock());
+        let mut features = FEATURES.lock();
         let plugin_features = features.entry(plugin.to_string()).or_default();
 
         if plugin_features.contains_key(feature_name) {
@@ -38,7 +35,7 @@ impl FeatureApi for FeatureApiImpl {
     fn remove_feature(&self, plugin: RStr<'_>, feature: RStr<'_>) -> RResult<(), RString> {
         let feature = feature.as_str();
 
-        let mut features = rresult_try!(FEATURES.lock());
+        let mut features = FEATURES.lock();
         let plugin_features = features.entry(plugin.to_string()).or_default();
 
         match plugin_features.remove(feature) {
@@ -48,7 +45,7 @@ impl FeatureApi for FeatureApiImpl {
     }
 
     fn _find_feature(&self, plugin_id: RStr<'_>, feature_id: RStr<'_>) -> RResult<RArc<Feature>, RString> {
-        let features: MutexGuard<'_, HashMap<String, HashMap<String, _>>> = rresult_try!(FEATURES.lock());
+        let features = FEATURES.lock();
 
         let Some(plugin) = features.get(plugin_id.as_str()) else {
             return RResult::RErr(format!("Plugin not found: {}", plugin_id.as_str()).into());

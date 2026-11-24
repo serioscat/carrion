@@ -1,29 +1,32 @@
-use abi_stable::StableAbi;
-use serde::{Serialize, Deserialize};
-use crate::event::{PhysicalPosition, PhysicalSize, WindowId};
-
+use abi_stable::std_types::RString;
+use crate::event::{PhysicalPosition, PhysicalSize};
 
 #[repr(u8)]
-#[derive(StableAbi, Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(abi_stable::StableAbi, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum WindowEvent {
-    CloseRequested(WindowId),
-    Destroyed(WindowId),
-    RedrawRequested(WindowId),
+    CloseRequested(RString, RString),
+    Destroyed(RString, RString),
+    RedrawRequested(RString, RString),
     ScaleFactorChanged(f32),
     Resized {
-        window_id: WindowId,
+        plugin: RString,
+        window: RString,
         size: PhysicalSize
     },
     Moved {
-        window_id: WindowId,
+        plugin: RString,
+        window: RString,
         size: PhysicalPosition
     },
     Focused {
-        window_id: WindowId,
+        plugin: RString,
+        window: RString,
         value: bool
     },
     Occluded {
-        window_id: WindowId,
+        plugin: RString,
+        window: RString,
         value: bool
     },
 }

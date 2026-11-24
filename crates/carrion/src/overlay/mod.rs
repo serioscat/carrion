@@ -1,3 +1,5 @@
+use abi_stable::sabi_trait::TD_Opaque;
+use carrion_api::core::window::UiApi_TO;
 use egui::{FontData, FontDefinitions, ViewportId};
 use egui_wgpu::{RendererOptions, WgpuConfiguration, winit::Painter};
 use winit::{application::ApplicationHandler, dpi::{PhysicalPosition, PhysicalSize}, event::{ElementState, WindowEvent}, event_loop::ActiveEventLoop, keyboard::{KeyCode, ModifiersState, PhysicalKey}, platform::x11::WindowAttributesExtX11, window::{Window, WindowAttributes}};
@@ -5,7 +7,7 @@ use winit::{application::ApplicationHandler, dpi::{PhysicalPosition, PhysicalSiz
 use std::sync::Arc;
 use tracing::{error, debug};
 
-use crate::{CONFIG, OVERLAY_STATE, overlay::keyboard_grab::KeyboardGrab};
+use crate::{CONFIG, OVERLAY_STATE, RENDER_HANDLERS, WINDOWS, core::window::ui::UiApiImpl, overlay::keyboard_grab::KeyboardGrab};
 
 mod keyboard_grab;
 pub mod state;
@@ -59,7 +61,7 @@ impl ApplicationHandler for Overlay {
         };
 
         window.set_visible(false);
-        OVERLAY_STATE.lock().unwrap().kb_grab = KeyboardGrab::new(&window);
+        OVERLAY_STATE.lock().kb_grab = KeyboardGrab::new(&window);
 
         let state = egui_winit::State::new(
             self.egui_ctx.clone(),
@@ -72,7 +74,7 @@ impl ApplicationHandler for Overlay {
 
         let mut fonts = FontDefinitions::default();
 
-        let bytes = std::fs::read(&CONFIG.lock().unwrap().font_path).unwrap();
+        let bytes = std::fs::read(&CONFIG.lock().font_path).unwrap();
 
         fonts.font_data.insert(
             "default".into(),
@@ -124,7 +126,7 @@ impl ApplicationHandler for Overlay {
                 event_loop.exit()
             }
             WindowEvent::RedrawRequested => {
-                let mut st = OVERLAY_STATE.lock().unwrap();
+                let mut st = OVERLAY_STATE.lock();
                 if st.pending_grab {
                     st.pending_grab = false;
                     if let Some(g) = &st.kb_grab {
@@ -146,16 +148,29 @@ impl ApplicationHandler for Overlay {
                         event_loop.exit();
                     }
 
+                    for window in WINDOWS.lock().iter() {
+                        let (_plugin_id, windows) = window;
 
-                    egui::Window::new("Window")
-                        .resizable(true)
-                        .collapsible(false)
-                        .default_pos([100., 100.])
-                        .default_size([100., 100.])
-                        .show(&ctx, |ui| {
-                            ui.label("text here");
-                            ui.allocate_space(ui.available_size());
-                        });
+                        for w in windows {
+                            let (_window_id, win_data) = w;
+                            let mut data = win_data.lock();
+
+                            egui::Window::new(data.title.clone())
+                                .resizable(data.resizable)
+                                .default_pos([data.position.x, data.position.y])
+                                .default_size(data.size)
+                                .open(&mut data.open)
+                                .show(&ctx, |ui| {
+                                    let handlers = RENDER_HANDLERS.lock();
+                                    let mut api = UiApiImpl { ui };
+                                    let mut handle = UiApi_TO::from_ptr(&mut api, TD_Opaque);
+
+                                    for handler in handlers.iter() {
+                                        handler._render(&mut handle);
+                                    }
+                                });
+                        }
+                    }
                 });
 
                 state.handle_platform_output(window, out.platform_output);
@@ -176,8 +191,8 @@ impl ApplicationHandler for Overlay {
                 if key.state == ElementState::Pressed && !key.repeat {
                     if let PhysicalKey::Code(code) = key.physical_key {
                         if (code == KeyCode::KeyG && self.mods.super_key())
-                            || (code == KeyCode::Escape && OVERLAY_STATE.lock().unwrap().visible) {
-                            let mut st = OVERLAY_STATE.lock().unwrap();
+                            || (code == KeyCode::Escape && OVERLAY_STATE.lock().visible) {
+                            let mut st = OVERLAY_STATE.lock();
                             let v = !st.visible;
 
                             st.set_visible(window, v);
@@ -201,7 +216,7 @@ impl ApplicationHandler for Overlay {
 
     fn user_event(&mut self, _: &ActiveEventLoop, _: ()) {
         if let Some(w) = &self.window {
-            let mut st = OVERLAY_STATE.lock().unwrap();
+            let mut st = OVERLAY_STATE.lock();
             let v = !st.visible;
 
             st.set_visible(w, v);

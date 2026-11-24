@@ -1,5 +1,3 @@
-pub mod vec2;
-pub mod theme;
-
-pub use vec2::*;
-pub use theme::*;
+pub(crate) mod fn_handler;
+pub mod math;
+pub mod window;

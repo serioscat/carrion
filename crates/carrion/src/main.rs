@@ -1,10 +1,11 @@
 mod config;
 mod overlay;
 mod core;
+mod types;
 mod load_plugins;
 
-use std::{collections::HashMap, sync::{LazyLock, Mutex}};
-
+use std::{collections::HashMap, sync::LazyLock};
+use parking_lot::Mutex;
 use abi_stable::std_types::RArc;
 use clap::Parser;
 use global_hotkey::{GlobalHotKeyEvent, GlobalHotKeyManager, HotKeyState, hotkey::{Code, HotKey, Modifiers}};
@@ -14,19 +15,20 @@ use tracing_subscriber::{EnvFilter, fmt::time::LocalTime};
 
 use winit::{event_loop::{ControlFlow, EventLoop}};
 use carrion_api::{
-    PluginRef, core::{event::EventHandlerApiObj, feature::Feature}, event::Event
+    PluginRef, core::{event::EventFnObj, feature::Feature, window::RenderFnObj}, event::Event
 };
-
 use crate::{
-    config::Config,
-    overlay::state::OverlayState
+    config::Config, core::window::WindowRef, overlay::state::OverlayState
 };
 
+type Lock<T> = LazyLock<Mutex<T>>;
 
-static FEATURES: LazyLock<Mutex<HashMap<String, HashMap<String, RArc<Feature>>>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
-static HANDLERS: LazyLock<Mutex<Vec<EventHandlerApiObj>>> = LazyLock::new(|| Mutex::new(Vec::new()));
-static PLUGINS: LazyLock<Mutex<Vec<PluginRef>>> = LazyLock::new(|| Mutex::new(Vec::new()));
-static CONFIG: LazyLock<Mutex<Config>> = LazyLock::new(|| {
+static FEATURES: Lock<HashMap<String, HashMap<String, RArc<Feature>>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
+static EVENT_HANDLERS: Lock<Vec<EventFnObj>> = LazyLock::new(|| Mutex::new(Vec::new()));
+static RENDER_HANDLERS: Lock<Vec<RenderFnObj>> = LazyLock::new(|| Mutex::new(Vec::new()));
+static WINDOWS: Lock<HashMap<String, HashMap<String, WindowRef>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
+static PLUGINS: Lock<Vec<PluginRef>> = LazyLock::new(|| Mutex::new(Vec::new()));
+static CONFIG: Lock<Config> = LazyLock::new(|| {
     let config = Config::get();
 
     if let Ok(c) = config {
@@ -36,12 +38,12 @@ static CONFIG: LazyLock<Mutex<Config>> = LazyLock::new(|| {
         Mutex::new(Config::default())
     }
 });
-static OVERLAY_STATE: LazyLock<Mutex<OverlayState>> = LazyLock::new(|| Mutex::new(OverlayState::default()));
+static OVERLAY_STATE: Lock<OverlayState> = LazyLock::new(|| Mutex::new(OverlayState::default()));
 
 pub fn send_event(event: Event) {
     tracing::debug!("Sending event: {event:?}");
 
-    let handlers = HANDLERS.lock().unwrap();
+    let handlers = EVENT_HANDLERS.lock();
 
     for handler in handlers.iter() {
         handler._call(event.clone());

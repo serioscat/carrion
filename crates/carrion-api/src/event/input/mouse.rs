@@ -1,12 +1,9 @@
-use abi_stable::StableAbi;
-use serde::{Deserialize, Serialize};
-
-use crate::{event::ElementState, types::Vec2};
-
+use crate::{event::ElementState, types::math::Vec2};
 
 
 #[repr(u8)]
-#[derive(StableAbi, Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(abi_stable::StableAbi, Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum MouseEvent {
     ScrollDelta(MouseScrollDelta),
     Button(MouseButton),
@@ -14,14 +11,16 @@ pub enum MouseEvent {
 }
 
 #[repr(C)]
-#[derive(StableAbi, Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(abi_stable::StableAbi, Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MouseButton {
     pub state: ElementState,
     pub button: u8
 }
 
 #[repr(u8)]
-#[derive(StableAbi, Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(abi_stable::StableAbi, Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum MouseScrollDelta {
     LineDelta(f32, f32),
     PixelDelta(Vec2),

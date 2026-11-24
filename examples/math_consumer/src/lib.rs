@@ -3,7 +3,7 @@ use abi_stable::{
         RResult, RStr, RString
     },
 };
-use carrion_api::{Plugin, PluginInfo, PluginRef, core::feature::FeatureApiObj, event::Event,
+use carrion_api::{Plugin, PluginInfo, PluginRef, core::feature::FeatureApiObj, event::{Event, KeyboardEvent, SystemEvent},
 };
 use math_provider_api::*;
 
@@ -33,6 +33,13 @@ fn instantiate() -> PluginRef {
 
 #[sabi_extern_fn]
 fn init(f: &FeatureApiObj) -> RResult<(), RString> {
+    let logger = match f.import(carrion_api::core::logger::FEATURE_KEY) {
+        Ok(p) => p,
+        Err(e) => return RResult::RErr(RString::from(e))
+    };
+
+    carrion_api::core::logger::init_logger(logger);
+
     let math_plugin = match f.import(math_provider_api::FEATURE_KEY) {
         Ok(p) => p,
         Err(e) => return RResult::RErr(RString::from(e))
@@ -48,9 +55,9 @@ fn init(f: &FeatureApiObj) -> RResult<(), RString> {
 
     event_plugin.on_event(|event| {
         match event {
-            Event::Visible(true) => carrion_api::info!("Hello, Carrion!"),
-            Event::Visible(false) => carrion_api::info!("Bye, Carrion."),
-            _ => {}
+            Event::System(SystemEvent::Keyboard(KeyboardEvent::Grabbed)) => carrion_api::debug!("Keyboard grabbed"),
+            Event::System(SystemEvent::Keyboard(KeyboardEvent::Ungrabbed)) => carrion_api::debug!("Keyboard ungrabbed"),
+            e => carrion_api::debug!("Unhandled {e:?}")
         }
     });
 
