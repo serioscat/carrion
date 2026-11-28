@@ -11,9 +11,10 @@ impl LoggerApi for LoggerApiImpl {
 
         match level {
             LogLevel::Debug => tracing::debug!(target: "plugin:", "{message}"),
-            LogLevel::Info  => tracing::info!( target: "plugin:", "{message}"),
-            LogLevel::Warn  => tracing::warn!( target: "plugin:", "{message}"),
+            LogLevel::Info => tracing::info!( target: "plugin:", "{message}"),
+            LogLevel::Warn => tracing::warn!( target: "plugin:", "{message}"),
             LogLevel::Error => tracing::error!(target: "plugin:", "{message}"),
+            LogLevel::Trace => tracing::trace!(target: "plugin:", "{message}"),
         }
     }
 }

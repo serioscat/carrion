@@ -1,8 +1,8 @@
 pub mod keyboard;
 pub mod mouse;
 
-pub use mouse::*;
 pub use keyboard::*;
+pub use mouse::*;
 
 #[repr(u8)]
 #[derive(abi_stable::StableAbi, Clone, Copy, Debug, PartialEq, Eq)]
@@ -17,5 +17,5 @@ pub enum ElementState {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum InputEvent {
     Keyboard(KeyboardInputEvent),
-    Mouse(MouseEvent)
+    Mouse(MouseEvent),
 }

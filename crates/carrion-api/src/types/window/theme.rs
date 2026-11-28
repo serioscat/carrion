@@ -20,7 +20,7 @@ impl Default for WindowTheme {
             border: [0, 0, 0],
             text: [255, 255, 255],
             radius: 5.,
-            font_size: 14.
+            font_size: 14.,
         }
     }
 }

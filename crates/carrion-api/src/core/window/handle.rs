@@ -1,6 +1,16 @@
-use abi_stable::{sabi_trait, sabi_trait::TD_Opaque, std_types::{RBox, RResult, RStr, RString, Tuple2}};
+use abi_stable::{
+    sabi_trait,
+    sabi_trait::TD_Opaque,
+    std_types::{RBox, RResult, RStr, RString, Tuple2},
+};
 
-use crate::{core::window::{render_fn::{RenderFn_TO, RenderFnObj}, ui::UiHandle}, types::{math::Vec2, window::WindowTheme, fn_handler::FnHandler}};
+use crate::{
+    core::window::{
+        render_fn::{RenderFn_TO, RenderFnObj},
+        ui::UiHandle,
+    },
+    types::{fn_handler::FnHandler, math::Vec2, window::WindowTheme},
+};
 
 pub type WindowHandleObj = WindowHandle_TO<'static, RBox<()>>;
 
@@ -33,6 +43,8 @@ impl WindowHandleObj {
     }
 
     pub fn destroy(&self, plugin: &str, id: &str) -> Result<(), String> {
-        self._destroy(plugin.into(), id.into()).map_err(String::from).into()
+        self._destroy(plugin.into(), id.into())
+            .map_err(String::from)
+            .into()
     }
 }

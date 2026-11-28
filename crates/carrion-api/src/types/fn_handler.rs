@@ -1,4 +1,7 @@
-use crate::{core::{event::EventFn, window::render_fn::RenderFn, window::ui::UiHandle}, event::Event};
+use crate::{
+    core::{event::EventFn, window::render_fn::RenderFn, window::ui::UiHandle},
+    event::Event,
+};
 
 pub(crate) struct FnHandler<F>(pub(crate) F);
 

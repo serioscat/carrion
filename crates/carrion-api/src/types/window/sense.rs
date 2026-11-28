@@ -12,13 +12,7 @@ bitflags::bitflags! {
     }
 }
 
-
 impl Sense {
-    #[inline]
-    pub fn hover() -> Self {
-        Self::empty()
-    }
-
     #[inline]
     pub fn focusable_noninteractive() -> Self {
         Self::FOCUSABLE
@@ -57,5 +51,23 @@ impl Sense {
     #[inline]
     pub fn is_focusable(&self) -> bool {
         self.contains(Self::FOCUSABLE)
+    }
+}
+
+#[cfg(feature = "egui")]
+impl From<Sense> for egui::Sense {
+    fn from(value: Sense) -> Self {
+        convert_bitflags!(value, Sense => egui::Sense {
+            HOVER, CLICK, DRAG, FOCUSABLE
+        })
+    }
+}
+
+#[cfg(feature = "egui")]
+impl From<egui::Sense> for Sense {
+    fn from(value: egui::Sense) -> Self {
+        convert_bitflags!(value, egui::Sense => Sense {
+            HOVER, CLICK, DRAG, FOCUSABLE
+        })
     }
 }

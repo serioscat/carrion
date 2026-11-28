@@ -9,15 +9,10 @@ pub struct Vec2 {
 }
 
 impl Vec2 {
-    #[inline(always)]
-    pub const fn new(x: f32, y: f32) -> Self {
-        Self { x, y }
-    }
-
     pub fn to_pos2(&self) -> Pos2 {
         Pos2 {
             x: self.x,
-            y: self.y
+            y: self.y,
         }
     }
 }
@@ -25,4 +20,11 @@ impl Vec2 {
 #[inline(always)]
 pub const fn vec2(x: f32, y: f32) -> Vec2 {
     Vec2 { x, y }
+}
+
+#[cfg(feature = "egui")]
+impl From<egui::Vec2> for Vec2 {
+    fn from(value: egui::Vec2) -> Self {
+        vec2(value.x, value.y)
+    }
 }

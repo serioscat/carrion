@@ -2,7 +2,6 @@ use abi_stable::{StableAbi, std_types::ROption};
 
 use crate::event::ElementState;
 
-
 #[repr(u8)]
 #[derive(StableAbi, Clone, Copy, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -179,9 +178,8 @@ pub struct KeyboardInputEvent {
     pub scancode: u32,
     pub state: ElementState,
     pub virtual_keycode: ROption<VirtualKeyCode>,
-    pub modifiers: ModifiersState
+    pub modifiers: ModifiersState,
 }
-
 
 #[repr(C)]
 #[derive(StableAbi, Clone, Debug, PartialEq, Eq)]
@@ -190,5 +188,5 @@ pub struct ModifiersState {
     pub logo: bool,
     pub control: bool,
     pub shift: bool,
-    pub alt: bool
+    pub alt: bool,
 }

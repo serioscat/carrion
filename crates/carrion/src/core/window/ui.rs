@@ -1,12 +1,10 @@
-use std::num::NonZeroU64;
-
-use carrion_api::{core::window::UiApi, types::{math::{Pos2, Rect}, window::{Flags, LayerId, Order, Response, Sense}}};
-use egui::{Label, Ui};
+use abi_stable::std_types::ROption;
 use carrion_api::types::window::Label as CarrionLabel;
-
+use carrion_api::{core::window::UiApi, types::window::Response};
+use egui::{Label, Ui};
 
 pub struct UiApiImpl<'a> {
-    pub ui: &'a mut Ui
+    pub ui: &'a mut Ui,
 }
 
 impl UiApi for UiApiImpl<'_> {
@@ -17,23 +15,26 @@ impl UiApi for UiApiImpl<'_> {
             sense,
             selectable,
             halign,
-            show_tooltip_when_elided
+            show_tooltip_when_elided,
         } = l;
-        let label = Label::new(text.to_string());
+
+        let mut label =
+            Label::new(text.to_string()).show_tooltip_when_elided(show_tooltip_when_elided);
+        if let ROption::RSome(v) = sense {
+            label = label.sense(egui::Sense::from(v));
+        }
+        if let ROption::RSome(v) = selectable {
+            label = label.selectable(v);
+        }
+        if let ROption::RSome(v) = halign {
+            label = label.halign(egui::Align::from(v));
+        }
+        if let ROption::RSome(v) = wrap_mode {
+            label = label.wrap_mode(egui::TextWrapMode::from(v))
+        }
 
         let resp = self.ui.add(label);
 
-        // will be replaced
-        Response {
-            id: NonZeroU64::new(resp.id.value()).unwrap(),
-            layer_id: LayerId { order: Order::Foreground, id: NonZeroU64::new(resp.layer_id.id.value()).unwrap() },
-            rect: Rect { min: Pos2::new(resp.rect.min.x, resp.rect.min.y), max: Pos2::new(resp.rect.max.x, resp.rect.max.y) },
-            interact_rect: Rect { min: Pos2::new(resp.interact_rect.min.x, resp.interact_rect.min.y), max: Pos2::new(resp.interact_rect.max.x, resp.interact_rect.max.y) },
-            sense: Sense::empty(),
-            interact_pointer_pos_or_nan: Pos2::new(f32::NAN, f32::NAN),
-            intrinsic_size_or_nan: carrion_api::types::math::Vec2::new(f32::NAN, f32::NAN),
-            flags: Flags::empty()
-
-        }
+        Response::from(resp)
     }
 }

@@ -11,7 +11,7 @@ pub use window::*;
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct PhysicalSize {
     pub w: u32,
-    pub h: u32
+    pub h: u32,
 }
 
 #[repr(C)]
@@ -19,7 +19,7 @@ pub struct PhysicalSize {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct PhysicalPosition {
     pub x: i32,
-    pub y: i32
+    pub y: i32,
 }
 
 #[repr(u8)]
@@ -29,5 +29,5 @@ pub enum Event {
     Window(WindowEvent),
     Input(InputEvent),
     Visible(bool),
-    System(SystemEvent)
+    System(SystemEvent),
 }

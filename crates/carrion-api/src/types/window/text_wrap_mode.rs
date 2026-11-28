@@ -4,5 +4,16 @@
 pub enum TextWrapMode {
     Extend,
     Wrap,
-    Truncate
+    Truncate,
+}
+
+#[cfg(feature = "egui")]
+impl From<TextWrapMode> for egui::TextWrapMode {
+    fn from(value: TextWrapMode) -> Self {
+        match value {
+            TextWrapMode::Extend => egui::TextWrapMode::Extend,
+            TextWrapMode::Wrap => egui::TextWrapMode::Wrap,
+            TextWrapMode::Truncate => egui::TextWrapMode::Truncate,
+        }
+    }
 }

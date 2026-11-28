@@ -1,9 +1,18 @@
-use std::sync::Arc;
-use abi_stable::{sabi_trait::TD_Opaque, std_types::{RResult, RStr, RString, Tuple2}};
-use carrion_api::{core::window::{RenderFnObj, WindowHandle, WindowHandleObj}, types::{math::{Vec2, vec2}, window::WindowTheme}};
+use abi_stable::{
+    sabi_trait::TD_Opaque,
+    std_types::{RResult, RStr, RString, Tuple2},
+};
+use carrion_api::{
+    core::window::{RenderFnObj, WindowHandle, WindowHandleObj},
+    types::{
+        math::{Vec2, vec2},
+        window::WindowTheme,
+    },
+};
 use parking_lot::Mutex;
+use std::sync::Arc;
 
-use crate::{RENDER_HANDLERS, WINDOWS};
+use crate::OVERLAY_DATA;
 
 pub type WindowRef = Arc<Mutex<WindowData>>;
 
@@ -14,7 +23,7 @@ pub struct WindowData {
     pub open: bool,
     pub resizable: bool,
     pub theme: WindowTheme,
-    pub _render_fn: Option<RenderFnObj>
+    pub _render_fn: Option<RenderFnObj>,
 }
 
 #[derive(Clone)]
@@ -29,7 +38,7 @@ impl WindowData {
             open: true,
             resizable: true,
             theme: WindowTheme::default(),
-            _render_fn: None
+            _render_fn: None,
         }
     }
 }
@@ -90,11 +99,11 @@ impl WindowHandle for WindowHandleImpl {
     }
 
     fn _add_render_fn(&self, func: RenderFnObj) {
-        RENDER_HANDLERS.lock().push(func);
+        OVERLAY_DATA.lock().render_handlers.push(Arc::new(func));
     }
 
     fn _destroy(&self, plugin: RStr<'_>, id: RStr<'_>) -> RResult<(), RString> {
-        let mut windows = WINDOWS.lock();
+        let windows = &mut OVERLAY_DATA.lock().windows;
         let plugin_windows = windows.entry(plugin.to_string()).or_default();
 
         match plugin_windows.remove(&id.to_string()) {

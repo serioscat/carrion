@@ -1,5 +1,5 @@
-use abi_stable::std_types::RString;
 use crate::event::{PhysicalPosition, PhysicalSize};
+use abi_stable::std_types::RString;
 
 #[repr(u8)]
 #[derive(abi_stable::StableAbi, Clone, Debug, PartialEq)]
@@ -12,21 +12,21 @@ pub enum WindowEvent {
     Resized {
         plugin: RString,
         window: RString,
-        size: PhysicalSize
+        size: PhysicalSize,
     },
     Moved {
         plugin: RString,
         window: RString,
-        size: PhysicalPosition
+        size: PhysicalPosition,
     },
     Focused {
         plugin: RString,
         window: RString,
-        value: bool
+        value: bool,
     },
     Occluded {
         plugin: RString,
         window: RString,
-        value: bool
+        value: bool,
     },
 }

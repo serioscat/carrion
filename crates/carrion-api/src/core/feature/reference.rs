@@ -1,8 +1,7 @@
-use std::{marker::PhantomData, ops::Deref};
 use abi_stable::std_types::RArc;
+use std::{marker::PhantomData, ops::Deref};
 
 use crate::core::feature::Feature;
-
 
 pub struct FeatureRef<T> {
     feature: RArc<Feature>,
@@ -11,7 +10,10 @@ pub struct FeatureRef<T> {
 
 impl<T> FeatureRef<T> {
     pub(crate) unsafe fn new(feature: RArc<Feature>) -> Self {
-        Self { feature, _t: PhantomData }
+        Self {
+            feature,
+            _t: PhantomData,
+        }
     }
 }
 

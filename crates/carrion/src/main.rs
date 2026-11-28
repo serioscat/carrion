@@ -1,33 +1,28 @@
 mod config;
-mod overlay;
 mod core;
-mod types;
 mod load_plugins;
+mod overlay;
+mod types;
 
-use std::{collections::HashMap, sync::LazyLock};
-use parking_lot::Mutex;
-use abi_stable::std_types::RArc;
 use clap::Parser;
-use global_hotkey::{GlobalHotKeyEvent, GlobalHotKeyManager, HotKeyState, hotkey::{Code, HotKey, Modifiers}};
+use global_hotkey::{
+    GlobalHotKeyEvent, GlobalHotKeyManager, HotKeyState,
+    hotkey::{Code, HotKey, Modifiers},
+};
+use parking_lot::Mutex;
+use std::sync::LazyLock;
 
 use time::macros::format_description;
 use tracing_subscriber::{EnvFilter, fmt::time::LocalTime};
 
-use winit::{event_loop::{ControlFlow, EventLoop}};
-use carrion_api::{
-    PluginRef, core::{event::EventFnObj, feature::Feature, window::RenderFnObj}, event::Event
-};
-use crate::{
-    config::Config, core::window::WindowRef, overlay::state::OverlayState
-};
+use carrion_api::event::Event;
+use winit::event_loop::{ControlFlow, EventLoop};
+
+use crate::{config::Config, types::OverlayData};
 
 type Lock<T> = LazyLock<Mutex<T>>;
 
-static FEATURES: Lock<HashMap<String, HashMap<String, RArc<Feature>>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
-static EVENT_HANDLERS: Lock<Vec<EventFnObj>> = LazyLock::new(|| Mutex::new(Vec::new()));
-static RENDER_HANDLERS: Lock<Vec<RenderFnObj>> = LazyLock::new(|| Mutex::new(Vec::new()));
-static WINDOWS: Lock<HashMap<String, HashMap<String, WindowRef>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
-static PLUGINS: Lock<Vec<PluginRef>> = LazyLock::new(|| Mutex::new(Vec::new()));
+static OVERLAY_DATA: Lock<OverlayData> = LazyLock::new(|| Mutex::new(OverlayData::default()));
 static CONFIG: Lock<Config> = LazyLock::new(|| {
     let config = Config::get();
 
@@ -38,12 +33,11 @@ static CONFIG: Lock<Config> = LazyLock::new(|| {
         Mutex::new(Config::default())
     }
 });
-static OVERLAY_STATE: Lock<OverlayState> = LazyLock::new(|| Mutex::new(OverlayState::default()));
 
 pub fn send_event(event: Event) {
     tracing::debug!("Sending event: {event:?}");
 
-    let handlers = EVENT_HANDLERS.lock();
+    let handlers = OVERLAY_DATA.lock().event_handlers.clone();
 
     for handler in handlers.iter() {
         handler._call(event.clone());
@@ -59,17 +53,13 @@ struct Args {
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    let debug = if !args.debug {
-        "debug"
-    } else { "info" };
+    let debug = if !args.debug { "debug" } else { "info" };
 
     let timer = LocalTime::new(format_description!(
         "[year]-[month]-[day]T[hour repr:24]:[minute]:[second].[subsecond digits:2]Z"
     ));
 
-    let env_filter = EnvFilter::new(format!(
-        "carrion={debug},plugin={debug}"
-    ));
+    let env_filter = EnvFilter::new(format!("carrion={debug},plugin={debug}"));
 
     tracing_subscriber::fmt()
         .with_env_filter(env_filter)
@@ -80,7 +70,6 @@ fn main() -> anyhow::Result<()> {
 
     // plugins injecting
     load_plugins::load()?;
-
     tracing::info!("Plugins loaded");
 
     // building window
@@ -98,7 +87,9 @@ fn main() -> anyhow::Result<()> {
 
     GlobalHotKeyEvent::set_event_handler(Some(move |e: GlobalHotKeyEvent| {
         if e.id == toggle_id && e.state == HotKeyState::Released {
-            let _ = proxy.send_event(());
+            if let Err(err) = proxy.send_event(()) {
+                tracing::error!("send_event failed: {err}");
+            }
         }
     }));
 

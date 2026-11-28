@@ -12,10 +12,15 @@ homepage = "https://github.com/serioscat/carrion"
 slint-build = "1.18.1"
 
 [dependencies]
-carrion-api.workspace = true
+carrion-api = { workspace = true, features = ["egui"] }
 abi_stable.workspace = true
 serde.workspace = true
 toml.workspace = true
+
+winit.workspace = true
+egui.workspace = true
+egui-winit.workspace = true
+egui-wgpu.workspace = true
 
 dirs = "7.0.0"
 anyhow = "1.0.104"
@@ -25,10 +30,6 @@ tracing-subscriber = { version = "0.3.23", features = ["env-filter", "local-time
 tracing = "0.1.44"
 time = { version = "0.3.55", features = ["macros"] }
 
-winit = "0.30.13"
-egui = "0.37.0"
-egui-winit = "0.37.0"
-egui-wgpu = { version = "0.37.0", features = ["winit"] }
 pollster = "1.0.1"
 
 global-hotkey = "0.9.0"

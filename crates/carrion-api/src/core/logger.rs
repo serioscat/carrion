@@ -1,6 +1,9 @@
 use std::sync::OnceLock;
 
-use abi_stable::{sabi_trait, std_types::{RBox, RStr}};
+use abi_stable::{
+    sabi_trait,
+    std_types::{RBox, RStr},
+};
 
 use crate::core::feature::{FeatureKey, FeatureRef};
 
@@ -11,7 +14,6 @@ pub const FEATURE_ID: &str = "logger";
 
 pub type LoggerApiObj = LoggerApi_TO<'static, RBox<()>>;
 pub const FEATURE_KEY: FeatureKey<LoggerApiObj> = FeatureKey::new(PLUGIN_ID, FEATURE_ID);
-
 
 pub fn init_logger(l: FeatureRef<LoggerApiObj>) {
     let _ = LOGGER.set(l);
@@ -25,8 +27,8 @@ pub enum LogLevel {
     Info,
     Warn,
     Error,
+    Trace,
 }
-
 
 #[sabi_trait]
 pub trait LoggerApi: Sync + Send {
@@ -66,3 +68,5 @@ macro_rules! info  { ($($arg:tt)*) => { $crate::__log_impl!(Info,  $($arg)*) }; 
 macro_rules! warn  { ($($arg:tt)*) => { $crate::__log_impl!(Warn,  $($arg)*) }; }
 #[macro_export]
 macro_rules! error { ($($arg:tt)*) => { $crate::__log_impl!(Error, $($arg)*) }; }
+#[macro_export]
+macro_rules! trace { ($($arg:tt)*) => { $crate::__log_impl!(Trace, $($arg)*) }; }

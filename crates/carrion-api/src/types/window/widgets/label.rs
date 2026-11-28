@@ -54,7 +54,7 @@ impl Label {
         self
     }
 
-        #[inline]
+    #[inline]
     pub fn halign(mut self, align: Align) -> Self {
         self.halign = ROption::RSome(align);
         self

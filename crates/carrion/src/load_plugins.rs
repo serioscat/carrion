@@ -1,18 +1,29 @@
-use abi_stable::{library::lib_header_from_path, sabi_trait::TD_Opaque, std_types::{RArc, RResult}};
+use abi_stable::{
+    library::lib_header_from_path,
+    sabi_trait::TD_Opaque,
+    std_types::{RArc, RResult},
+};
 use anyhow::Context;
 use carrion_api::{PluginRef, core::*};
 use tracing::error;
 
 use std::{fs, path::PathBuf};
 
-use crate::{CONFIG, PLUGINS, core::{event::EventHandlerApiImpl, feature::FeatureApiImpl, logger::LoggerApiImpl, window::WindowApiImpl}};
-
+use crate::{
+    CONFIG, OVERLAY_DATA,
+    core::{
+        event::EventHandlerApiImpl, feature::FeatureApiImpl, logger::LoggerApiImpl,
+        window::WindowApiImpl,
+    },
+};
 
 pub fn load() -> anyhow::Result<()> {
-    let config_dir = dirs::config_dir().context("Failed to get config dir.")?.join("carrion");
+    let config_dir = dirs::config_dir()
+        .context("Failed to get config dir.")?
+        .join("carrion");
     let plugins_dir = config_dir.join("plugins");
 
-    let config = CONFIG.lock(); 
+    let config = CONFIG.lock();
 
     if !plugins_dir.exists() {
         fs::create_dir_all(&plugins_dir)?;
@@ -27,7 +38,10 @@ pub fn load() -> anyhow::Result<()> {
     let mut plugins = Vec::new();
 
     for plugin_path in plugins_path {
-        let header = lib_header_from_path(&plugin_path).context(format!("Plugin load failed: {}", plugin_path.to_string_lossy()))?;
+        let header = lib_header_from_path(&plugin_path).context(format!(
+            "Plugin load failed: {}",
+            plugin_path.to_string_lossy()
+        ))?;
         let plugin = match header.init_root_module::<PluginRef>() {
             Ok(p) => p,
             Err(e) => {
@@ -38,7 +52,12 @@ pub fn load() -> anyhow::Result<()> {
 
         let info = plugin.info();
 
-        if PLUGINS.lock().iter().any(|p| p.info().id == info.id) {
+        if OVERLAY_DATA
+            .lock()
+            .plugins
+            .iter()
+            .any(|p| p.info().id == info.id)
+        {
             tracing::warn!(plugin_id = %info.id, path = %plugin_path.display(), "Plugin is already registered");
             continue;
         }
@@ -50,12 +69,25 @@ pub fn load() -> anyhow::Result<()> {
 
     let f: feature::FeatureApiObj = feature::FeatureApi_TO::from_value(FeatureApiImpl, TD_Opaque);
     let l: logger::LoggerApiObj = logger::LoggerApi_TO::from_value(LoggerApiImpl, TD_Opaque);
-    let e: event::EventHandlerApiObj = event::EventHandlerApi_TO::from_value(EventHandlerApiImpl, TD_Opaque);
+    let e: event::EventHandlerApiObj =
+        event::EventHandlerApi_TO::from_value(EventHandlerApiImpl, TD_Opaque);
     let w: window::WindowApiObj = window::WindowApi_TO::from_value(WindowApiImpl, TD_Opaque);
 
-    f.add_feature(logger::PLUGIN_ID.into(), logger::FEATURE_ID.into(), RArc::new(feature::Feature::new(l)));
-    f.add_feature(event::PLUGIN_ID.into(), event::FEATURE_ID.into(), RArc::new(feature::Feature::new(e)));
-    f.add_feature(window::PLUGIN_ID.into(), window::FEATURE_ID.into(), RArc::new(feature::Feature::new(w)));
+    f.add_feature(
+        logger::PLUGIN_ID.into(),
+        logger::FEATURE_ID.into(),
+        RArc::new(feature::Feature::new(l)),
+    );
+    f.add_feature(
+        event::PLUGIN_ID.into(),
+        event::FEATURE_ID.into(),
+        RArc::new(feature::Feature::new(e)),
+    );
+    f.add_feature(
+        window::PLUGIN_ID.into(),
+        window::FEATURE_ID.into(),
+        RArc::new(feature::Feature::new(w)),
+    );
 
     for plugin in plugins {
         let info = plugin.info();
@@ -69,7 +101,7 @@ pub fn load() -> anyhow::Result<()> {
         }
 
         tracing::debug!(id = %info.id, version = %info.version, "Loaded");
-        PLUGINS.lock().push(plugin);
+        OVERLAY_DATA.lock().plugins.push(plugin);
     }
 
     Ok(())
